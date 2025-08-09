@@ -6,13 +6,14 @@ const clearBtn = document.getElementById("clearBtn");
 
 const size = 16;
 const pixelSize = canvas.width / size;
-let pixels = Array(size).fill().map(() => Array(size).fill("#000"));
+// Cambiado el color inicial de cada píxel a null para indicar vacío
+let pixels = Array(size).fill().map(() => Array(size).fill(null));
 
 // Dibuja la matriz LED
 function drawMatrix() {
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      ctx.fillStyle = pixels[y][x];
+      ctx.fillStyle = pixels[y][x] || "#000"; // Si es null, pinta negro
       ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
       ctx.strokeStyle = "#222";
       ctx.strokeRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
@@ -22,7 +23,7 @@ function drawMatrix() {
 
 // Limpia la matriz
 function clearMatrix() {
-  pixels = Array(size).fill().map(() => Array(size).fill("#000"));
+  pixels = Array(size).fill().map(() => Array(size).fill(null));
 }
 
 // Función para encender un pixel desde el código
@@ -51,7 +52,7 @@ function generateCodeFromPixels() {
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       let col = pixels[y][x];
-      if (col !== "#000" && col !== "black") {
+      if (col) { // Solo píxeles con color definido
         if (!coordsByColor[col]) coordsByColor[col] = [];
         coordsByColor[col].push([x, y]);
       }
@@ -78,7 +79,7 @@ canvas.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
-// Modificar el event listener del canvas para distinguir clic izquierdo y derecho
+// Detectar clicks para pintar píxeles manualmente
 canvas.addEventListener("mousedown", (e) => {
   const rect = canvas.getBoundingClientRect();
   const x = Math.floor((e.clientX - rect.left) / pixelSize);
@@ -88,8 +89,8 @@ canvas.addEventListener("mousedown", (e) => {
     // Clic izquierdo pinta
     pixels[y][x] = colorPicker.value;
   } else if (e.button === 2) {
-    // Clic derecho borra (negro)
-    pixels[y][x] = "#000000";
+    // Clic derecho borra (vacío)
+    pixels[y][x] = null;
   }
 
   drawMatrix();
