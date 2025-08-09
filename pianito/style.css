@@ -1,0 +1,79 @@
+body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f0f0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .controls, .code-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        select, button {
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            background-color: #fff;
+        }
+        button:hover {
+            background-color: #e9e9e9;
+        }
+        button:active {
+            background-color: #ddd;
+        }
+        button.recording {
+            background-color: #ff4136;
+            color: white;
+            border-color: #ff4136;
+        }
+        #piano {
+            display: flex;
+            position: relative;
+            height: 180px;
+            margin-bottom: 20px;
+        }
+        .white-key {
+            width: 40px;
+            height: 180px;
+            border: 1px solid #333;
+            background-color: white;
+            box-sizing: border-box;
+            border-radius: 0 0 5px 5px;
+        }
+        .black-key {
+            width: 24px;
+            height: 110px;
+            background-color: #333;
+            position: absolute;
+            margin-left: -12px; /* Centra la tecla negra sobre la división */
+            z-index: 2;
+            border-radius: 0 0 3px 3px;
+        }
+        .white-key.active {
+            background-color: #a6d8ff;
+        }
+        .black-key.active {
+            background-color: #6bb9ff;
+        }
+        .code-container {
+            width: 100%;
+            max-width: 650px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            font-family: monospace;
+            font-size: 14px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
