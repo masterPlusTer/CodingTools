@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>cuadricula</title>
+  <link rel="stylesheet" href="./style.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cuadrícula interactiva — posicionar y contar</title>
+ 
+
+  <h1>Cuadrícula interactiva — posicionar y contar cuadraditos</h1>
+  <p class="small">Haz la cuadrícula de cualquier tamaño, haz clic en las casillas para posicionar el robot y la caja, o para marcar casillas y contarlas.</p>
+
+  <div class="controls">
+    <label>Filas: <input id="rows" type="number" min="1" value="5" /></label>
+    <label>Columnas: <input id="cols" type="number" min="1" value="5" /></label>
+    <button id="gen">Generar cuadrícula</button>
+    <label>Modo:
+      <select id="mode">
+        <option value="select">Seleccionar (contar)</option>
+        <option value="robot">Colocar robot</option>
+        <option value="box">Colocar caja</option>
+      </select>
+    </label>
+    <button id="clear">Limpiar selecciones</button>
+    <button id="reset">Reset completo</button>
+  </div>
+
+  <div class="grid-wrap">
+    <div>
+      <div id="grid" class="grid"></div>
+      <div style="margin-top:8px; font-size:13px; color:#444">Haz clic en una casilla para actuar según el modo.</div>
+    </div>
+
+    <div class="panel">
+      <div class="info">
+        <div><strong>Modo activo:</strong> <span id="modeLabel">Seleccionar (contar)</span></div>
+        <div style="margin-top:8px"><strong>Última casilla clicada:</strong> <span id="last">—</span></div>
+        <div style="margin-top:8px"><strong>Casillas seleccionadas:</strong> <span id="count">0</span></div>
+        <div style="margin-top:8px"><strong>Robot:</strong> <span id="robotPos">(0,0)</span></div>
+        <div><strong>Caja:</strong> <span id="boxPos">—</span></div>
+        <div style="margin-top:8px"><strong>Movimientos mínimos (Manhattan):</strong> <span id="dist">—</span></div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="legend"><strong>Leyenda</strong></div>
+        <div class="small">Casilla seleccionada — fondo azul claro</div>
+        <div class="small">Robot — fondo amarillo</div>
+        <div class="small">Caja — fondo rojo claro</div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="small"><strong>Coordenadas marcadas (fila, columna):</strong></div>
+        <div id="coordsList" class="coords-list">—</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Nota: las filas y columnas empiezan en 0 (esquina superior izquierda = (0,0)).</footer>
+<!-- partial -->
+  <script  src="./script.js"></script>
+
+</body>
+</html>

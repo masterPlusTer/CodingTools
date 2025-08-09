@@ -1,0 +1,21 @@
+:root{ --gap:4px; --cell-size:48px; }
+    body{ font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding:18px; }
+    h1{ margin:0 0 12px 0; font-size:20px }
+    .controls{ display:flex; gap:12px; align-items:end; flex-wrap:wrap }
+    label{ font-size:13px }
+    input[type=number]{ width:70px; padding:6px; }
+    button{ padding:8px 10px; cursor:pointer }
+    .grid-wrap{ margin-top:16px; display:flex; gap:20px; align-items:flex-start }
+    .grid{ display:grid; gap: var(--gap); background:#f0f0f0; padding:8px; border-radius:8px }
+    .cell{ width:var(--cell-size); height:var(--cell-size); display:flex; align-items:center; justify-content:center; background:white; border-radius:6px; user-select:none; cursor:pointer; box-shadow: 0 0 0 1px rgba(0,0,0,0.05) inset }
+    .cell:hover{ transform:translateY(-2px); transition:transform .08s }
+    .cell.coord{ font-size:10px; color:#666 }
+    .cell.selected{ background:#d0f0ff; }
+    .cell.robot{ background:#ffe7a8; }
+    .cell.box{ background:#ffd0d0; }
+    .legend{ font-size:13px }
+    .info{ font-size:14px }
+    .panel{ min-width:260px }
+    .small{ font-size:13px; color:#444 }
+    .coords-list{ max-height:120px; overflow:auto; border:1px dashed #ddd; padding:8px; border-radius:6px; background:#fafafa }
+    footer{ margin-top:18px; font-size:12px; color:#666 }
