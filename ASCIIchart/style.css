@@ -1,0 +1,60 @@
+:root{
+      --bg:#0f172a;         /* slate-900 */
+      --card:#111827;       /* gray-900 */
+      --muted:#94a3b8;      /* slate-400 */
+      --text:#e5e7eb;       /* gray-200 */
+      --accent:#22d3ee;     /* cyan-400 */
+      --border:#1f2937;     /* gray-800 */
+      --hover:#0b1226;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; padding:24px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", "DejaVu Sans Mono","Courier New", monospace;
+      background:var(--bg); color:var(--text);
+    }
+    h1{margin:0 0 12px; font-size:clamp(20px,3vw,28px); text-align:center}
+    .sub{color:var(--muted); text-align:center; margin-bottom:18px}
+    .bar{
+      display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:center;
+      margin: 10px auto 18px;
+    }
+    input[type="text"]{
+      background:var(--card); color:var(--text); border:1px solid var(--border);
+      border-radius:10px; padding:10px 12px; min-width:260px; outline:none;
+    }
+    .btn{
+      background:var(--card); color:var(--text); border:1px solid var(--border);
+      border-radius:10px; padding:10px 14px; cursor:pointer;
+    }
+    .btn:hover{border-color:var(--accent); box-shadow:0 0 0 2px #22d3ee22}
+    .hint{color:var(--muted); font-size:12px; text-align:center; margin-top:-6px}
+    .wrap{overflow:auto; border:1px solid var(--border); border-radius:14px}
+    table{width:100%; border-collapse:collapse; background:var(--card)}
+    thead th{
+      position:sticky; top:0; z-index:1;
+      background:linear-gradient(180deg,#0f172a 0%, #0b1226 100%);
+      color:var(--text); font-weight:600; letter-spacing:.02em;
+      border-bottom:1px solid var(--border);
+      padding:10px 8px; text-align:center; white-space:nowrap;
+    }
+    tbody td{
+      border-bottom:1px solid var(--border);
+      padding:8px 8px; text-align:center; white-space:nowrap;
+    }
+    tbody tr:nth-child(even){background:#0e162e}
+    tbody tr:hover{background:#0b1328}
+    .control{color:#a78bfa; font-style:italic}
+    .c1{color:#fca5a5; font-style:italic}
+    .print{color:#c7f9cc}
+    .char{
+      font-size:18px; line-height:1; min-width:2ch; display:inline-block;
+    }
+    .small{font-size:12px; color:var(--muted)}
+    .pill{
+      display:inline-block; padding:2px 8px; border:1px solid var(--border);
+      border-radius:999px; font-size:12px; color:var(--muted)
+    }
+    .footer{
+      margin-top:12px; color:var(--muted); font-size:12px; text-align:center
+    }
