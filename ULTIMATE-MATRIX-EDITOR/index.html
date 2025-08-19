@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Ultimate Matrix Generator (tool for developing)</title>
+  <link rel="stylesheet" href="./style.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<div class="panels-container">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Editor de Matriz Avanzado</h2>
+                    <div class="matrix-size" id="matrixSize">5x5</div>
+                </div>
+                
+                <div class="matrix-controls">
+                    <button class="btn-primary" onclick="addRow()">
+                        <span class="icon">➕</span> Añadir Fila
+                    </button>
+                    <button class="btn-primary" onclick="deleteRow()">
+                        <span class="icon">➖</span> Eliminar Fila
+                    </button>
+                    <button class="btn-primary" onclick="addColumn()">
+                        <span class="icon">➕</span> Añadir Columna
+                    </button>
+                    <button class="btn-primary" onclick="deleteColumn()">
+                        <span class="icon">➖</span> Eliminar Columna
+                    </button>
+                    <button class="btn-primary" onclick="rotate()">
+                        <span class="icon">🔄</span> Rotar
+                    </button>
+                    <button class="btn-danger" onclick="clearMatrix()">
+                        <span class="icon">🗑️</span> Limpiar
+                    </button>
+                </div>
+                
+                <div class="matrix-grid" id="matrixContainer">
+                    <!-- La matriz se renderizará aquí -->
+                </div>
+                
+                <div class="image-section">
+                    <h3>Convertir desde Imagen</h3>
+                    <input type="file" id="imageInput" accept="image/png">
+                    
+                    <div class="slider-container">
+                        <label for="threshold">Umbral: <span id="thresholdValue">128</span></label>
+                        <input type="range" id="threshold" min="0" max="255" value="128">
+                    </div>
+                    
+                    <button class="btn-success" onclick="convertToMatrix()">
+                        <span class="icon">🖼️</span> Convertir Imagen
+                    </button>
+                    
+                    <div class="preview-container">
+                        <div class="image-preview">
+                            <img id="previewImage" src="" alt="Vista previa">
+                            <button class="btn-primary" onclick="resetPreviewImage()">Restablecer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Formato de Salida</h2>
+                </div>
+                
+                <h3>Formatos Predefinidos</h3>
+                <div class="format-presets">
+                    <button class="preset-btn" onclick="loadPreset('brackets')">Corchetes</button>
+                    <button class="preset-btn" onclick="loadPreset('compact')">Compacto</button>
+                    <button class="preset-btn" onclick="loadPreset('arduino')">Arduino</button>
+                    <button class="preset-btn" onclick="loadPreset('c_array')">C Array</button>
+                    <button class="preset-btn" onclick="loadPreset('python')">Python</button>
+                    <button class="preset-btn" onclick="loadPreset('ascii_art')">ASCII Art</button>
+                    <button class="btn-warning" onclick="toggleCustomizationPanel()">
+                        <span class="icon">⚙️</span> Formato Avanzado Personalizado
+                    </button>
+                </div>
+                
+                <!-- Separador personalizado siempre visible -->
+                <div class="custom-separator" id="customSeparatorContainer">
+                    <label for="customSeparator">Separador personalizado:</label>
+                    <input type="text" id="customSeparator" placeholder="Ejemplo: , " value=", ">
+                    <button class="btn-primary" onclick="updateCustomSeparator()">Aplicar</button>
+                </div>
+                
+                <div class="customization-panel" id="customizationPanel">
+                    <h3><span class="icon">🎨</span> Personalización Avanzada</h3>
+                    
+                    <h3>Formato Personalizado</h3>
+                    <div class="custom-format-container">
+                        <textarea id="customFormat" placeholder="Ejemplo: const matrix = [\n{matrix}\n];">const matrix = [
+{matrix}
+];</textarea>
+                    </div>
+                    
+                    <div class="format-help" id="formatHelp">
+                        <h4>Marcadores disponibles:</h4>
+                        <ul>
+                            <li><code>{matrix}</code> - Matriz completa con separadores</li>
+                            <li><code>{row}</code> - Fila de la matriz</li>
+                            <li><code>{row_binary}</code> - Fila como binario (10101)</li>
+                            <li><code>{row_hex}</code> - Fila como hexadecimal</li>
+                            <li><code>{row_decimal}</code> - Fila como decimal</li>
+                            <li><code>{width}</code> - Ancho de la matriz</li>
+                            <li><code>{height}</code> - Alto de la matriz</li>
+                            <li><code>{i}</code> - Índice de fila (0-based)</li>
+                            <li><code>{i1}</code> - Índice de fila (1-based)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div id="copyMessage">¡Contenido copiado al portapapeles!</div>
+                
+                <div class="result-container">
+                    <div>
+                        <h3>Resultado:</h3>
+                        <div id="resultDisplay"></div>
+                    </div>
+                    
+                    <div class="help-example-container">
+                        <div class="example-format">
+                            <h4>Ejemplo de formato avanzado:</h4>
+                            <p>-Para Arduino con bytes separados cada 8 bits:</p>
+                            <code>const byte bitmap[] = { {matrix} };</code>
+                          <p>-Para matriz de bits con filas separadas por coma:</p>
+                            <code> {row_binary},</code>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="copy-button-container">
+                    <button class="btn-success" onclick="copyCustomToClipboard()">
+                        <span class="icon">📋</span> Copiar al Portapapeles
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="canvas" style="display: none;"></canvas>
+<!-- partial -->
+  <script  src="./script.js"></script>
+
+</body>
+</html>
