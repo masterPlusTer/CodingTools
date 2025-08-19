@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Tile selector (game developer tool)</title>
+  <link rel="stylesheet" href="./style.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<div >
+<div style="display: flex; justify-content: flex-end;">
+  <a href="https://github.com/vurmux/urizen" target="_blank" rel="noopener noreferrer">Repositorio Urizen OneBit en GitHub</a>
+</div>
+  
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+          
+            <div class="control-group">
+                <label for="selection-width">Ancho selección:</label>
+                <input type="number" id="selection-width" min="1" value="12">
+                <label for="selection-height">Alto selección:</label>
+                <input type="number" id="selection-height" min="1" value="12">
+            </div>
+            <div class="control-group">
+                <span id="tile-position">X: 0px, Y: 0px, W: 12px, H: 12px</span><br>
+                <span id="tile-index">Tile: 0 (0,0)</span>
+            </div><div class="preview-container">
+                <canvas id="tile-preview"></canvas>
+            </div>
+        </div>
+  
+  
+</div>
+ 
+    <div class="container">
+        <div class="panel">
+            <div class="tileset-container">
+                <canvas id="tileset"></canvas>
+            </div>
+            <div class="control-group">
+                <button id="zoom-in">Zoom +</button>
+                <button id="zoom-out">Zoom -</button>
+                <span id="zoom-level">Zoom: 1x</span>
+            </div>
+        </div>
+        
+    
+           <button id="detect-colors" class="accent">🎨 Detectar colores</button>
+ <select id="color-mode">
+                        <option value="color">Color</option>
+                        <option value="bw">Blanco/Negro</option>
+                    </select>
+                </div>
+
+                <div class="control-group" id="bw-threshold-control" style="display: none;">
+                    <label for="bw-threshold">Umbral B/N:</label>
+                    <div style="flex-grow: 1;">
+                        <input type="range" id="bw-threshold" min="0" max="255" value="128">
+                        <span id="threshold-value">128</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="data-format">Formato de datos:</label>
+                    <select id="data-format">
+                        <option value="array1d">Array 1D</option>
+                        <option value="array2d">Array 2D</option>
+                        <option value="hex-packed">Hexadecimal</option>
+                        <option value="palette-index">Paleta Indexada</option>
+                    </select>
+                </div>
+                
+                <div class="button-group">
+                 
+                </div>
+            </div>
+        </div>
+            </div>
+            <textarea id="tile-data"></textarea>
+            <div class="control-group">
+                <button id="copy-data">Copiar Datos</button>
+                <button id="export-png">Exportar PNG</button>
+            </div>
+        </div>
+    </div>
+<!-- partial -->
+  <script  src="./script.js"></script>
+
+</body>
+</html>
