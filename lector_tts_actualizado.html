@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lector TTS</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#101827;color:#f1f5f9;padding:24px}main{max-width:950px;margin:auto}h1{margin:0 0 6px;font-size:1.6rem}p{color:#b8c5d5;margin-top:0}.panel{background:#1c2939;border:1px solid #354458;border-radius:14px;padding:18px;margin-top:18px}textarea{width:100%;min-height:330px;resize:vertical;background:#0e1725;color:#f8fafc;border:1px solid #526174;border-radius:9px;padding:15px;font:1rem/1.6 system-ui}label{display:block;margin:12px 0 7px}select,input[type=range]{width:100%}select{background:#0e1725;color:white;border:1px solid #526174;padding:10px;border-radius:8px}.controls{display:flex;flex-wrap:wrap;gap:9px;margin:18px 0}button{background:#3b82f6;color:white;border:0;border-radius:9px;padding:12px 17px;font-size:1rem;cursor:pointer}button.secondary{background:#475569}button:disabled{opacity:.45;cursor:not-allowed}.row{display:flex;gap:22px;flex-wrap:wrap}.row>*{flex:1 1 230px}.check{display:flex;align-items:flex-start;gap:10px;color:#d8e1ea}.check input{margin-top:4px}.info{font-size:.9rem;color:#b8c5d5}#status{color:#a7f3d0;min-height:1.5em}small{color:#aab7c7}
+</style>
+</head>
+<body><main>
+<h1>🔊 Lector de texto a voz</h1><p>Pegá el texto, elegí una voz y escuchalo. Funciona con las voces disponibles en tu navegador.</p>
+<section class="panel"><label for="texto">Texto para leer</label><textarea id="texto" placeholder="Pegá acá el texto que querés escuchar..."></textarea>
+<label class="check"><input type="checkbox" id="limpiar" checked><span>Ignorar separadores y caracteres decorativos al leer (=====, -----, ****, etc.). El texto original no cambia.</span></label>
+<div class="row"><div><label for="voz">Voz</label><select id="voz"><option>Cargando voces…</option></select></div><div><label for="velocidad">Velocidad: <output id="valorVel">1.0×</output></label><input type="range" id="velocidad" min="0.5" max="2" step="0.1" value="1"></div></div>
+<div class="controls"><button id="leer">▶ Leer</button><button id="pausar" class="secondary">⏸ Pausar</button><button id="reanudar" class="secondary">⏵ Reanudar</button><button id="detener" class="secondary">⏹ Detener</button></div>
+<div id="status" role="status">Listo.</div><small>La lectura usa la función de voz del navegador. Algunas voces pueden requerir conexión según el sistema.</small></section>
+</main><script>
+(()=>{
+'use strict';
+const synth=window.speechSynthesis, text=document.getElementById('texto'), voiceSelect=document.getElementById('voz'), status=document.getElementById('status');
+const speed=document.getElementById('velocidad'), speedVal=document.getElementById('valorVel');
+let voices=[], parts=[], index=0, reading=false, generation=0;
+function setStatus(s){status.textContent=s;}
+function loadVoices(){
+  if(!synth){setStatus('Este navegador no permite síntesis de voz.');return;}
+  const old=voiceSelect.value;
+  voices=synth.getVoices(); voiceSelect.replaceChildren();
+  if(!voices.length){voiceSelect.add(new Option('Voz predeterminada',''));return;}
+  const ordered=voices.map((v,i)=>({v,i})).sort((a,b)=>Number(b.v.lang.toLowerCase().startsWith('es'))-Number(a.v.lang.toLowerCase().startsWith('es'))||a.v.name.localeCompare(b.v.name));
+  for(const {v,i} of ordered)voiceSelect.add(new Option(`${v.name} (${v.lang})${v.localService?' • local':''}`,String(i)));
+  if([...voiceSelect.options].some(o=>o.value===old))voiceSelect.value=old;
+  else {let i=ordered.find(x=>x.v.lang.toLowerCase().startsWith('es'));if(i)voiceSelect.value=String(i.i);}
+}
+function clean(s){
+  if(!document.getElementById('limpiar').checked)return s;
+  return s.split(/\r?\n/).map(line=>{
+    // Quitar líneas formadas solamente por adornos, con o sin espacios.
+    if(/^[\s=*_~#|+·•—–\-─━═╔╗╚╝╠╣╦╩╬┄┈.]{3,}$/.test(line) && /[=*_~#|+·•—–\-─━═]/.test(line))return '';
+    // Quitar bordes decorativos junto a un título, sin borrar operadores dentro de frases.
+    return line.replace(/^\s*([=*_~#|+·•—–\-─━═])\1{2,}\s*/g,'').replace(/\s*([=*_~#|+·•—–\-─━═])\1{2,}\s*$/g,'').replace(/([=*_~#|+·•—–\-─━═])\1{3,}/g,' ');
+  }).join('\n').replace(/\n\s*\n\s*\n/g,'\n\n').trim();
+}
+function chunks(s){
+  const out=[];let remaining=s;
+  while(remaining.length){
+    if(remaining.length<=220){out.push(remaining);break;}
+    let cut=remaining.lastIndexOf('\n',220);
+    if(cut<80)cut=Math.max(remaining.lastIndexOf('. ',220),remaining.lastIndexOf('! ',220),remaining.lastIndexOf('? ',220));
+    if(cut<80)cut=remaining.lastIndexOf(' ',220);
+    if(cut<40)cut=220;
+    else cut+=1;
+    out.push(remaining.slice(0,cut).trim());remaining=remaining.slice(cut).trimStart();
+  }
+  return out.filter(Boolean);
+}
+function stop(){reading=false;generation++;parts=[];index=0;if(synth)synth.cancel();setStatus('Detenido.');}
+function next(token){if(!reading||token!==generation)return;
+  if(index>=parts.length){reading=false;setStatus('Lectura terminada.');return;}
+  const u=new SpeechSynthesisUtterance(parts[index++]);
+  const selected=voices[Number(voiceSelect.value)];if(selected)u.voice=selected;
+  u.rate=Number(speed.value);u.lang=selected?.lang||'es-ES';
+  u.onend=()=>next(token);
+  u.onerror=e=>{if(e.error==='canceled'||e.error==='interrupted')return;reading=false;setStatus('Error de voz: '+e.error);};
+  synth.speak(u);setStatus(`Leyendo fragmento ${index} de ${parts.length}…`);
+}
+document.getElementById('leer').addEventListener('click',()=>{
+  if(!synth){setStatus('Tu navegador no soporta TTS.');return;}
+  stop();const s=clean(text.value);if(!s){setStatus('Pegá algún texto para leer.');return;}
+  parts=chunks(s);index=0;reading=true;const token=++generation;next(token);
+});
+document.getElementById('pausar').addEventListener('click',()=>{if(synth?.speaking&&!synth.paused){synth.pause();setStatus('Pausado.');}});
+document.getElementById('reanudar').addEventListener('click',()=>{if(synth?.paused){synth.resume();setStatus('Reanudado.');}});
+document.getElementById('detener').addEventListener('click',stop);
+speed.addEventListener('input',()=>speedVal.value=Number(speed.value).toFixed(1)+'×');
+if(synth){loadVoices();synth.onvoiceschanged=loadVoices;}else setStatus('Este navegador no soporta lectura en voz alta.');
+})();
+</script></body></html>
