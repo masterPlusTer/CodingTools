@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lector TTS - un solo cuadro</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#101827;color:#f1f5f9;padding:24px}main{max-width:950px;margin:auto}h1{margin:0 0 6px;font-size:1.6rem}p{color:#b8c5d5;margin-top:0}.panel{background:#1c2939;border:1px solid #354458;border-radius:14px;padding:18px;margin-top:18px}label{display:block;margin:12px 0 7px}select,input[type=range]{width:100%}select{background:#0e1725;color:#fff;border:1px solid #526174;padding:10px;border-radius:8px}.controls{display:flex;flex-wrap:wrap;gap:9px;margin:16px 0}button{background:#3b82f6;color:#fff;border:0;border-radius:9px;padding:12px 17px;font-size:1rem;cursor:pointer}button.secondary{background:#475569}button:disabled{opacity:.45;cursor:not-allowed}.row{display:flex;gap:22px;flex-wrap:wrap}.row>*{flex:1 1 230px}.check{display:flex;align-items:flex-start;gap:10px;color:#d8e1ea}.check input{margin-top:4px}#status{color:#a7f3d0;min-height:1.5em}small,.hint{color:#afc0d1}.hint{font-size:.85rem;margin:7px 0 0}
+#editor{width:100%;height:360px;overflow-y:auto;resize:vertical;white-space:pre-wrap;overflow-wrap:anywhere;background:#0e1725;color:#f8fafc;border:1px solid #526174;border-radius:9px;padding:15px;font:1rem/1.7 system-ui;outline:none}#editor:focus{border-color:#60a5fa}#editor:empty:before{content:attr(data-placeholder);color:#8193aa;pointer-events:none}#editor mark{background:#facc15;color:#111827;border-radius:3px}#editor .active-part{background:#1d4ed8;color:white;border-radius:3px}#editor[contenteditable=false]{cursor:default}.file-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0 12px}.file-row small{overflow-wrap:anywhere}
+</style>
+</head>
+<body><main><h1>🔊 Lector de texto a voz</h1><p>Pegá, escribí o abrí un archivo. La lectura se resalta directamente en el mismo cuadro.</p>
+<section class="panel">
+<div class="file-row"><button type="button" class="secondary" id="abrir">📂 Abrir archivo</button><input id="archivo" type="file" accept=".txt,.md,.markdown,.csv,.json,.html,.htm,.xml,.css,.js,.ts,.py,.sh,.log,.ini,.yaml,.yml,text/*" hidden><small id="nombre-archivo">Archivos de texto, código, Markdown, CSV y HTML</small></div>
+<label for="editor">Texto para leer y editar</label><div id="editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Texto para leer y editar" spellcheck="false" data-placeholder="Pegá o escribí acá el texto que querés escuchar..."></div>
+<p class="hint">Amarillo: palabra actual. Azul: fragmento actual cuando la voz no informa las palabras. Durante la lectura se bloquea la edición para mantener el seguimiento correcto; al detenerla podés volver a editar.</p>
+<label class="check"><input type="checkbox" id="limpiar" checked><span>Ignorar separadores y caracteres decorativos al leer (=====, -----, ****, etc.). El texto original no cambia.</span></label>
+<div class="row"><div><label for="voz">Voz</label><select id="voz"><option>Cargando voces…</option></select></div><div><label for="velocidad">Velocidad: <output id="valorVel">1.0×</output></label><input type="range" id="velocidad" min="0.5" max="2" step="0.1" value="1"></div></div>
+<div class="controls"><button id="leer">▶ Leer</button><button id="pausar" class="secondary">⏸ Pausar</button><button id="reanudar" class="secondary">⏵ Reanudar</button><button id="detener" class="secondary">⏹ Detener</button></div>
+<div id="status" role="status" aria-live="polite">Listo.</div><small>Funciona localmente con las voces de tu navegador. Algunas voces necesitan conexión. Los archivos se abren en el navegador, sin subirlos a ningún servidor.</small>
+</section></main>
+<script>
+(()=>{'use strict';
+const synth=window.speechSynthesis, editor=document.getElementById('editor'), voiceSelect=document.getElementById('voz'), status=document.getElementById('status'), speed=document.getElementById('velocidad'), speedVal=document.getElementById('valorVel'), fileInput=document.getElementById('archivo');
+let voices=[], raw='', readText='', positionMap=[], parts=[], index=0, reading=false, generation=0, currentPart=null;
+const setStatus=s=>status.textContent=s;
+function updateEditor(start=-1,end=-1,word=false){
+  editor.replaceChildren();
+  if(start<0||end<=start){editor.textContent=raw;return;}
+  start=Math.max(0,Math.min(start,raw.length));end=Math.max(start,Math.min(end,raw.length));
+  editor.append(document.createTextNode(raw.slice(0,start)));
+  const highlight=document.createElement(word?'mark':'span');
+  if(!word)highlight.className='active-part';
+  highlight.textContent=raw.slice(start,end);
+  editor.append(highlight,document.createTextNode(raw.slice(end)));
+  const target=highlight.getBoundingClientRect(), frame=editor.getBoundingClientRect();
+  if(target.top<frame.top+18||target.bottom>frame.bottom-18)editor.scrollTop+=target.top-frame.top-frame.height/3;
+}
+function getRaw(){return editor.innerText.replace(/\r\n?/g,'\n');}
+function unlock(){editor.contentEditable='true';}
+function stop(s='Detenido.'){
+  reading=false;generation++;currentPart=null;parts=[];index=0;
+  if(synth)synth.cancel();unlock();updateEditor();setStatus(s);
+}
+function loadVoices(){
+  if(!synth){setStatus('Este navegador no permite síntesis de voz.');return;}
+  const previous=voiceSelect.value;voices=synth.getVoices();voiceSelect.replaceChildren();
+  if(!voices.length){voiceSelect.add(new Option('Voz predeterminada',''));return;}
+  const ordered=voices.map((v,i)=>({v,i})).sort((a,b)=>Number(b.v.lang.toLowerCase().startsWith('es'))-Number(a.v.lang.toLowerCase().startsWith('es'))||a.v.name.localeCompare(b.v.name));
+  for(const {v,i} of ordered)voiceSelect.add(new Option(`${v.name} (${v.lang})${v.localService?' • local':''}`,String(i)));
+  if([...voiceSelect.options].some(o=>o.value===previous))voiceSelect.value=previous;
+  else {const es=ordered.find(x=>x.v.lang.toLowerCase().startsWith('es'));if(es)voiceSelect.value=String(es.i);}
+}
+function buildReadingText(source){
+  const cleaned=[],mapping=[], remove=document.getElementById('limpiar').checked;
+  let offset=0;
+  for(const line of source.split('\n')){
+    let from=0,to=line.length;
+    if(remove){
+      if(/^[\s=*_~#|+·•—–\-─━═╔╗╚╝╠╣╦╩╬┄┈.]{3,}$/.test(line)&&/[=*_~#|+·•—–\-─━═]/.test(line))to=0;
+      else {
+        const left=line.match(/^\s*([=*_~#|+·•—–\-─━═])\1{2,}\s*/);
+        if(left)from=left[0].length;
+        const right=line.slice(from).match(/\s*([=*_~#|+·•—–\-─━═])\1{2,}\s*$/);
+        if(right)to-=right[0].length;
+      }
+    }
+    for(let i=from;i<to;i++){
+      // Keep the spoken text positions tied to the text shown in the editor.
+      cleaned.push(line[i]);mapping.push(offset+i);
+    }
+    cleaned.push('\n');mapping.push(offset+line.length);
+    offset+=line.length+1;
+  }
+  if(cleaned.length){cleaned.pop();mapping.pop();}
+  let a=0,b=cleaned.length;
+  while(a<b&&/\s/.test(cleaned[a]))a++;
+  while(b>a&&/\s/.test(cleaned[b-1]))b--;
+  readText=cleaned.slice(a,b).join('');positionMap=mapping.slice(a,b);
+}
+function chunkText(s){
+  const out=[];let offset=0;
+  while(offset<s.length){
+    let end=Math.min(offset+220,s.length);
+    if(end<s.length){
+      let cut=s.lastIndexOf('\n',end);
+      if(cut<offset+80)cut=Math.max(s.lastIndexOf('. ',end),s.lastIndexOf('! ',end),s.lastIndexOf('? ',end));
+      if(cut<offset+80)cut=s.lastIndexOf(' ',end);
+      if(cut>=offset+40)end=cut+1;
+    }
+    if(end<=offset)end=Math.min(offset+220,s.length);
+    if(s.slice(offset,end).trim())out.push({text:s.slice(offset,end),start:offset,end});
+    offset=end;
+  }
+  return out;
+}
+function highlightSpoken(start,end,word=false){
+  if(start<0||end<=start||!positionMap.length)return;
+  const first=positionMap[Math.min(start,positionMap.length-1)],last=positionMap[Math.min(end-1,positionMap.length-1)]+1;
+  if(Number.isInteger(first)&&Number.isInteger(last))updateEditor(first,last,word);
+}
+function trackWord(part,charIndex){
+  const t=part.text;let i=Math.max(0,Math.min(charIndex,t.length-1));
+  while(i<t.length&&/\s/.test(t[i]))i++;
+  if(i>=t.length)return;
+  let start=i,end=i;
+  while(start>0&&!/\s/.test(t[start-1]))start--;
+  while(end<t.length&&!/\s/.test(t[end]))end++;
+  highlightSpoken(part.start+start,part.start+end,true);
+}
+function next(token){
+  if(!reading||token!==generation)return;
+  if(index>=parts.length){stop('Lectura terminada.');return;}
+  const part=parts[index++];currentPart=part;
+  const utterance=new SpeechSynthesisUtterance(part.text);
+  const selected=voices[Number(voiceSelect.value)];if(selected)utterance.voice=selected;
+  utterance.rate=Number(speed.value);utterance.lang=selected?.lang||'es-ES';
+  utterance.onstart=()=>{if(reading&&token===generation)highlightSpoken(part.start,part.end);};
+  utterance.onboundary=e=>{if(!reading||token!==generation||currentPart!==part)return;if(e.name==='word')trackWord(part,e.charIndex);};
+  utterance.onend=()=>next(token);
+  utterance.onerror=e=>{if(token!==generation||e.error==='canceled'||e.error==='interrupted')return;stop('Error de voz: '+e.error);};
+  synth.speak(utterance);setStatus(`Leyendo fragmento ${index} de ${parts.length}…`);
+}
+document.getElementById('leer').addEventListener('click',()=>{
+  if(!synth){setStatus('Tu navegador no soporta TTS.');return;}
+  if(reading)stop();
+  raw=getRaw();buildReadingText(raw);
+  if(!readText.trim()){setStatus('Pegá texto o abrí un archivo para leer.');return;}
+  parts=chunkText(readText);index=0;reading=true;editor.contentEditable='false';
+  const token=++generation;next(token);
+});
+document.getElementById('pausar').addEventListener('click',()=>{if(synth?.speaking&&!synth.paused){synth.pause();setStatus('Pausado.');}});
+document.getElementById('reanudar').addEventListener('click',()=>{if(synth?.paused){synth.resume();setStatus('Reanudado.');}});
+document.getElementById('detener').addEventListener('click',()=>stop());
+editor.addEventListener('input',()=>{if(!reading)raw=getRaw();});
+editor.addEventListener('paste',e=>{
+  e.preventDefault();const pasted=e.clipboardData.getData('text/plain');
+  const selection=window.getSelection();if(!selection.rangeCount)return;
+  const range=selection.getRangeAt(0);range.deleteContents();const node=document.createTextNode(pasted);range.insertNode(node);
+  range.setStartAfter(node);range.collapse(true);selection.removeAllRanges();selection.addRange(range);
+  raw=getRaw();
+});
+document.getElementById('limpiar').addEventListener('change',()=>{if(reading)stop('Lectura detenida al cambiar la limpieza.');});
+speed.addEventListener('input',()=>speedVal.value=Number(speed.value).toFixed(1)+'×');
+document.getElementById('abrir').addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change',async()=>{
+  const file=fileInput.files?.[0];if(!file)return;
+  try{
+    if(reading)stop();
+    // read text only; PDF and DOCX are binary formats, not suitable for File.text().
+    const contents=await file.text();
+    raw=contents.replace(/\r\n?/g,'\n');updateEditor();editor.scrollTop=0;
+    document.getElementById('nombre-archivo').textContent=file.name;
+    setStatus(`Archivo abierto: ${file.name}`);
+  }catch(err){setStatus('No se pudo abrir el archivo: '+err.message);}
+  fileInput.value='';
+});
+if(synth){loadVoices();synth.onvoiceschanged=loadVoices;}else setStatus('Este navegador no soporta lectura en voz alta.');
+})();
+</script></body></html>
